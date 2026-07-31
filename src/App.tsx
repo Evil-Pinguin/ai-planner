@@ -26,7 +26,7 @@ function App() {
     fetchTasks()
   }, [])
 
-    const handleGenerate = async () => {
+      const handleGenerate = async () => {
     if (!scaryTask) return
     setIsGenerating(true)
 
@@ -42,9 +42,29 @@ function App() {
       }
 
       const data = await response.json()
-      console.log('Получили подзадачи от ИИ:', data.subtasks)
       
-      // Пока просто очищаем инпут после успеха
+      // 1. Форматируем подзадачи под наш интерфейс Subtask
+      const formattedSubtasks = data.subtasks.map((subtask: { title: string }, index: number) => ({
+        id: `${Date.now()}-${index}`,
+        title: subtask.title,
+        is_done: false
+      }))
+
+      // 2. Сохраняем в Supabase
+      const { data: insertedData, error } = await supabase
+        .from('tasks')
+        .insert([
+          { title: scaryTask, subtasks: formattedSubtasks }
+        ])
+        .select()
+
+      if (error) throw error
+
+      // 3. Добавляем в стейт, чтобы задача сразу появилась на экране
+      if (insertedData && insertedData.length > 0) {
+        setTasks((prevTasks) => [insertedData[0] as Task, ...prevTasks])
+      }
+      
       setScaryTask('')
     } catch (error) {
       console.error('Ошибка генерации:', error)
@@ -74,10 +94,31 @@ function App() {
         </button>
       </div>
 
-      {isLoading ? (
+           {isLoading ? (
         <p>Загрузка задач...</p>
       ) : (
-        <p>Задач в базе: {tasks.length}</p>
+        <div>
+          {tasks.length === 0 && <p>Пока нет задач. Добавь первую!</p>}
+          {tasks.map((task) => (
+            <div key={task.id} style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px', borderRadius: '8px' }}>
+              <h3 style={{ marginTop: 0 }}>{task.title}</h3>
+              <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                {task.subtasks.map((subtask) => (
+                  <li key={subtask.id} style={{ marginBottom: '8px', listStyleType: 'none' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={subtask.is_done} 
+                        readOnly 
+                      />
+                      {subtask.title}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
