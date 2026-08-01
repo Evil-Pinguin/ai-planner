@@ -218,20 +218,13 @@ function App() {
                 backgroundColor: '#ffffff',
                 boxShadow: '0 4px 6px rgba(0,0,0,0.02)' // Едва заметная тень для объема
               }}>
-                                <div 
+                                                <div 
                   onClick={() => toggleTask(task.id)}
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: '12px' }}
                 >
                   <h3 style={{ 
                     margin: 0, 
                     color: isAllDone ? '#34c759' : '#1d1d1f', // Зеленый Apple, если всё готово
-                    transition: 'color 0.3s' 
-                  }}>
-                    {task.title}
-                  </h3>
-                                                     <h3 style={{ 
-                    margin: 0, 
-                    color: isAllDone ? '#34c759' : '#1d1d1f', 
                     transition: 'color 0.3s' 
                   }}>
                     {task.title}
