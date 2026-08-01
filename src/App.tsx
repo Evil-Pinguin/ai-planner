@@ -9,6 +9,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [generatingSubtaskId, setGeneratingSubtaskId] = useState<string | null>(null)
+
   useEffect(() => {
     const fetchTasks = async () => {
       const { data, error } = await supabase
@@ -30,7 +31,50 @@ function App() {
   const toggleTask = (id: string) => {
     setExpandedTaskId(prevId => prevId === id ? null : id)
   }
-    const handleGenerateMicrotasks = async (taskId: string, subtask: Subtask) => {
+
+  const toggleSubtaskDone = (taskId: string, subtaskId: string) => {
+    setTasks(prevTasks => prevTasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          subtasks: task.subtasks.map(st => {
+            if (st.id === subtaskId) {
+              return { ...st, is_done: !st.is_done }
+            }
+            return st
+          })
+        }
+      }
+      return task
+    }))
+  }
+
+  const toggleMicrotaskDone = (taskId: string, subtaskId: string, microtaskId: string) => {
+    setTasks(prevTasks => prevTasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          subtasks: task.subtasks.map(st => {
+            if (st.id === subtaskId && st.microtasks) {
+              return {
+                ...st,
+                microtasks: st.microtasks.map(mt => {
+                  if (mt.id === microtaskId) {
+                    return { ...mt, is_done: !mt.is_done }
+                  }
+                  return mt
+                })
+              }
+            }
+            return st
+          })
+        }
+      }
+      return task
+    }))
+  }
+
+  const handleGenerateMicrotasks = async (taskId: string, subtask: Subtask) => {
     setGeneratingSubtaskId(subtask.id)
 
     try {
@@ -50,7 +94,6 @@ function App() {
         is_done: false
       }))
 
-      // Обновляем вложенный стейт (Матрешка)
       setTasks(prevTasks => prevTasks.map(task => {
         if (task.id === taskId) {
           return {
@@ -90,14 +133,12 @@ function App() {
 
       const data = await response.json()
       
-      // 1. Форматируем подзадачи под наш интерфейс Subtask
       const formattedSubtasks = data.subtasks.map((subtask: { title: string }, index: number) => ({
         id: `${Date.now()}-${index}`,
         title: subtask.title,
         is_done: false
       }))
 
-      // 2. Сохраняем в Supabase
       const { data: insertedData, error } = await supabase
         .from('tasks')
         .insert([
@@ -107,7 +148,6 @@ function App() {
 
       if (error) throw error
 
-      // 3. Добавляем в стейт, чтобы задача сразу появилась на экране
       if (insertedData && insertedData.length > 0) {
         setTasks((prevTasks) => [insertedData[0] as Task, ...prevTasks])
       }
@@ -161,25 +201,37 @@ function App() {
 
                 {isExpanded && (
                   <ul style={{ paddingLeft: '0', margin: '15px 0 0 0' }}>
-                                       {task.subtasks.map((subtask, index) => (
+                    {task.subtasks.map((subtask, index) => (
                       <li key={subtask.id} style={{ marginBottom: '12px', listStyleType: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            border: '1px solid #0070f3',
-                            color: '#0070f3',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            flexShrink: 0
-                          }}>
+                          <span 
+                            onClick={() => toggleSubtaskDone(task.id, subtask.id)}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              border: '1px solid #0070f3',
+                              color: subtask.is_done ? 'white' : '#0070f3',
+                              backgroundColor: subtask.is_done ? '#0070f3' : 'transparent',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              flexShrink: 0,
+                              cursor: 'pointer',
+                              transition: 'background-color 0.2s, color 0.2s'
+                            }}
+                          >
                             {index + 1}
                           </span>
-                          <span style={{ flexGrow: 1 }}>{subtask.title}</span>
+                          <span style={{ 
+                            flexGrow: 1, 
+                            textDecoration: subtask.is_done ? 'line-through' : 'none',
+                            color: subtask.is_done ? '#888' : '#1a1a1a'
+                          }}>
+                            {subtask.title}
+                          </span>
                           <button 
                             onClick={() => handleGenerateMicrotasks(task.id, subtask)}
                             disabled={generatingSubtaskId === subtask.id}
@@ -194,21 +246,32 @@ function App() {
                           <ul style={{ paddingLeft: '34px', marginTop: '12px' }}>
                             {subtask.microtasks.map((mt, mtIndex) => (
                               <li key={mt.id} style={{ marginBottom: '8px', listStyleType: 'none', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555' }}>
-                                <span style={{
-                                  width: '22px',
-                                  height: '22px',
-                                  borderRadius: '50%',
-                                  border: '1px solid #ccc',
-                                  color: '#888',
-                                  display: 'flex',
-                                  justifyContent: 'center',
-                                  alignItems: 'center',
-                                  fontSize: '11px',
-                                  flexShrink: 0
-                                }}>
+                                <span 
+                                  onClick={() => toggleMicrotaskDone(task.id, subtask.id, mt.id)}
+                                  style={{
+                                    width: '22px',
+                                    height: '22px',
+                                    borderRadius: '50%',
+                                    border: '1px solid #ccc',
+                                    color: mt.is_done ? 'white' : '#888',
+                                    backgroundColor: mt.is_done ? '#888' : 'transparent',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    fontSize: '11px',
+                                    flexShrink: 0,
+                                    cursor: 'pointer',
+                                    transition: 'background-color 0.2s, color 0.2s'
+                                  }}
+                                >
                                   {index + 1}.{mtIndex + 1}
                                 </span>
-                                {mt.title}
+                                <span style={{ 
+                                  textDecoration: mt.is_done ? 'line-through' : 'none',
+                                  color: mt.is_done ? '#bbb' : '#555'
+                                }}>
+                                  {mt.title}
+                                </span>
                               </li>
                             ))}
                           </ul>
