@@ -186,8 +186,14 @@ function App() {
       ) : (
         <div>
           {tasks.length === 0 && <p style={{ color: '#86868b' }}>Пока нет задач. Добавь первую!</p>}
-          {tasks.map((task) => {
+                    {tasks.map((task) => {
             const isExpanded = expandedTaskId === task.id
+            
+            // Считаем прогресс
+            const totalSubtasks = task.subtasks.length
+            const doneSubtasks = task.subtasks.filter(st => st.is_done).length
+            const progress = totalSubtasks > 0 ? (doneSubtasks / totalSubtasks) * 100 : 0
+            const isAllDone = doneSubtasks === totalSubtasks && totalSubtasks > 0
 
             return (
               <div key={task.id} style={{ 
@@ -198,12 +204,35 @@ function App() {
                 backgroundColor: '#ffffff',
                 boxShadow: '0 4px 6px rgba(0,0,0,0.02)' // Едва заметная тень для объема
               }}>
-                <div 
+                                <div 
                   onClick={() => toggleTask(task.id)}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: '12px' }}
                 >
-                  <h3 style={{ margin: 0 }}>{task.title}</h3>
+                  <h3 style={{ 
+                    margin: 0, 
+                    color: isAllDone ? '#34c759' : '#1d1d1f', // Зеленый Apple, если всё готово
+                    transition: 'color 0.3s' 
+                  }}>
+                    {task.title}
+                  </h3>
                   <span style={{ fontSize: '13px', color: '#86868b', fontWeight: '500' }}>{isExpanded ? 'Свернуть' : 'Развернуть'}</span>
+                </div>
+
+                {/* Сам прогресс-бар */}
+                <div style={{ 
+                  width: '100%', 
+                  height: '6px', 
+                  backgroundColor: '#e8e8ed', 
+                  borderRadius: '980px', 
+                  overflow: 'hidden' 
+                }}>
+                  <div style={{ 
+                    width: `${progress}%`, 
+                    height: '100%', 
+                    backgroundColor: isAllDone ? '#34c759' : '#0071e3', 
+                    borderRadius: '980px',
+                    transition: 'width 0.4s ease-in-out, background-color 0.3s' 
+                  }} />
                 </div>
 
                 {isExpanded && (
