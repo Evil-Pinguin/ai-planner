@@ -164,18 +164,32 @@ function App() {
     <div style={{ padding: '40px 20px', maxWidth: '680px', margin: '0 auto' }}>
       <h1>AI Планировщик</h1>
       
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
+            <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        marginBottom: '32px', 
+        backgroundColor: '#ffffff', 
+        padding: '8px', 
+        borderRadius: '18px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.06)' // Мягкая тень капсулы
+      }}>
         <input 
           type="text" 
           value={scaryTask}
           onChange={(e) => setScaryTask(e.target.value)}
           placeholder="Например: Сделать портфолио"
-          style={{ flexGrow: 1, padding: '12px 16px' }}
+          style={{ 
+            flexGrow: 1, 
+            padding: '8px 12px', 
+            border: 'none', 
+            backgroundColor: 'transparent',
+            outline: 'none'
+          }}
         />
         <button 
           onClick={handleGenerate}
           disabled={!scaryTask || isGenerating}
-          style={{ padding: '12px 20px', flexShrink: 0 }}
+          style={{ padding: '10px 20px', flexShrink: 0 }}
         >
           {isGenerating ? 'Думаю...' : 'Разбить'}
         </button>
@@ -215,7 +229,26 @@ function App() {
                   }}>
                     {task.title}
                   </h3>
-                  <span style={{ fontSize: '13px', color: '#86868b', fontWeight: '500' }}>{isExpanded ? 'Свернуть' : 'Развернуть'}</span>
+                                                     <h3 style={{ 
+                    margin: 0, 
+                    color: isAllDone ? '#34c759' : '#1d1d1f', 
+                    transition: 'color 0.3s' 
+                  }}>
+                    {task.title}
+                  </h3>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    style={{ 
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s ease-in-out',
+                      color: '#86868b'
+                    }}
+                  >
+                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
 
                 {/* Сам прогресс-бар */}
