@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabaseClient'
 import { type Task, type Subtask, type Microtask } from './types'
+import confetti from 'canvas-confetti'
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -9,7 +10,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [generatingSubtaskId, setGeneratingSubtaskId] = useState<string | null>(null)
-
+  
   useEffect(() => {
     const fetchTasks = async () => {
       const { data, error } = await supabase
@@ -32,21 +33,42 @@ function App() {
     setExpandedTaskId(prevId => prevId === id ? null : id)
   }
 
-  const toggleSubtaskDone = (taskId: string, subtaskId: string) => {
+    const toggleSubtaskDone = (taskId: string, subtaskId: string) => {
+    let justCompleted = false // Флаг: задача только что стала 100%?
+
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        return {
-          ...task,
-          subtasks: task.subtasks.map(st => {
-            if (st.id === subtaskId) {
-              return { ...st, is_done: !st.is_done }
-            }
-            return st
-          })
+        // Считаем старый прогресс (было ли уже всё выполнено до клика)
+        const wasAllDone = task.subtasks.length > 0 && task.subtasks.every(st => st.is_done)
+
+        const newSubtasks = task.subtasks.map(st => {
+          if (st.id === subtaskId) {
+            return { ...st, is_done: !st.is_done }
+          }
+          return st
+        })
+
+        // Считаем новый прогресс (стало ли всё выполнено после клика)
+        const isAllDoneNow = newSubtasks.length > 0 && newSubtasks.every(st => st.is_done)
+
+        // Момент перехода: раньше не было 100%, а теперь стало 100%
+        if (!wasAllDone && isAllDoneNow) {
+          justCompleted = true
         }
+
+        return { ...task, subtasks: newSubtasks }
       }
       return task
     }))
+
+    // Если поймали момент завершения — стреляем!
+    if (justCompleted) {
+      confetti({
+        particleCount: 120,
+        spread: 70,
+        origin: { y: 0.6 }
+      })
+    }
   }
 
   const toggleMicrotaskDone = (taskId: string, subtaskId: string, microtaskId: string) => {
