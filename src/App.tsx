@@ -160,82 +160,98 @@ function App() {
     }
   }
 
-  return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+    return (
+    <div style={{ padding: '40px 20px', maxWidth: '680px', margin: '0 auto' }}>
       <h1>AI Планировщик</h1>
       
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
         <input 
           type="text" 
           value={scaryTask}
           onChange={(e) => setScaryTask(e.target.value)}
           placeholder="Например: Сделать портфолио"
-          style={{ flexGrow: 1, padding: '8px' }}
+          style={{ flexGrow: 1, padding: '12px 16px' }}
         />
         <button 
           onClick={handleGenerate}
           disabled={!scaryTask || isGenerating}
-          style={{ padding: '8px 16px' }}
+          style={{ padding: '12px 20px', flexShrink: 0 }}
         >
-          {isGenerating ? 'Думаю...' : 'Разбить на шаги'}
+          {isGenerating ? 'Думаю...' : 'Разбить'}
         </button>
       </div>
 
       {isLoading ? (
-        <p>Загрузка задач...</p>
+        <p style={{ color: '#86868b' }}>Загрузка задач...</p>
       ) : (
         <div>
-          {tasks.length === 0 && <p>Пока нет задач. Добавь первую!</p>}
+          {tasks.length === 0 && <p style={{ color: '#86868b' }}>Пока нет задач. Добавь первую!</p>}
           {tasks.map((task) => {
             const isExpanded = expandedTaskId === task.id
 
             return (
-              <div key={task.id} style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px', borderRadius: '8px' }}>
+              <div key={task.id} style={{ 
+                border: '1px solid #e8e8ed', 
+                padding: '24px', 
+                marginBottom: '16px', 
+                borderRadius: '18px', 
+                backgroundColor: '#ffffff',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.02)' // Едва заметная тень для объема
+              }}>
                 <div 
                   onClick={() => toggleTask(task.id)}
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                 >
                   <h3 style={{ margin: 0 }}>{task.title}</h3>
-                  <span style={{ fontSize: '12px', color: '#555' }}>{isExpanded ? '▲ Свернуть' : '▼ Развернуть'}</span>
+                  <span style={{ fontSize: '13px', color: '#86868b', fontWeight: '500' }}>{isExpanded ? 'Свернуть' : 'Развернуть'}</span>
                 </div>
 
                 {isExpanded && (
-                  <ul style={{ paddingLeft: '0', margin: '15px 0 0 0' }}>
+                  <ul style={{ paddingLeft: '0', margin: '20px 0 0 0' }}>
                     {task.subtasks.map((subtask, index) => (
-                      <li key={subtask.id} style={{ marginBottom: '12px', listStyleType: 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <li key={subtask.id} style={{ marginBottom: '16px', listStyleType: 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <span 
                             onClick={() => toggleSubtaskDone(task.id, subtask.id)}
                             style={{
                               width: '24px',
                               height: '24px',
                               borderRadius: '50%',
-                              border: '1px solid #0070f3',
-                              color: subtask.is_done ? 'white' : '#0070f3',
-                              backgroundColor: subtask.is_done ? '#0070f3' : 'transparent',
+                              border: '2px solid #0071e3',
+                              color: subtask.is_done ? 'white' : '#0071e3',
+                              backgroundColor: subtask.is_done ? '#0071e3' : 'transparent',
                               display: 'flex',
                               justifyContent: 'center',
                               alignItems: 'center',
-                              fontSize: '14px',
-                              fontWeight: 'bold',
+                              fontSize: '12px',
+                              fontWeight: '600',
                               flexShrink: 0,
                               cursor: 'pointer',
-                              transition: 'background-color 0.2s, color 0.2s'
+                              transition: 'background-color 0.2s, color 0.2s, border-color 0.2s'
                             }}
                           >
                             {index + 1}
                           </span>
                           <span style={{ 
                             flexGrow: 1, 
+                            fontSize: '16px',
                             textDecoration: subtask.is_done ? 'line-through' : 'none',
-                            color: subtask.is_done ? '#888' : '#1a1a1a'
+                            color: subtask.is_done ? '#86868b' : '#1d1d1f',
+                            transition: 'color 0.2s'
                           }}>
                             {subtask.title}
                           </span>
                           <button 
                             onClick={() => handleGenerateMicrotasks(task.id, subtask)}
                             disabled={generatingSubtaskId === subtask.id}
-                            style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#f0f0f0', color: '#333', borderRadius: '4px' }}
+                            style={{ 
+                              fontSize: '13px', 
+                              padding: '6px 12px', 
+                              backgroundColor: '#f5f5f7', 
+                              color: '#0071e3', 
+                              borderRadius: '980px',
+                              border: '1px solid #d2d2d7'
+                            }}
                           >
                             {generatingSubtaskId === subtask.id ? '...' : 'Еще проще'}
                           </button>
@@ -243,32 +259,34 @@ function App() {
 
                         {/* Блок микрозадач (если они есть) */}
                         {subtask.microtasks && subtask.microtasks.length > 0 && (
-                          <ul style={{ paddingLeft: '34px', marginTop: '12px' }}>
+                          <ul style={{ paddingLeft: '36px', marginTop: '12px' }}>
                             {subtask.microtasks.map((mt, mtIndex) => (
-                              <li key={mt.id} style={{ marginBottom: '8px', listStyleType: 'none', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555' }}>
+                              <li key={mt.id} style={{ marginBottom: '8px', listStyleType: 'none', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
                                 <span 
                                   onClick={() => toggleMicrotaskDone(task.id, subtask.id, mt.id)}
                                   style={{
-                                    width: '22px',
-                                    height: '22px',
+                                    width: '20px',
+                                    height: '20px',
                                     borderRadius: '50%',
-                                    border: '1px solid #ccc',
-                                    color: mt.is_done ? 'white' : '#888',
-                                    backgroundColor: mt.is_done ? '#888' : 'transparent',
+                                    border: '2px solid #d2d2d7',
+                                    color: mt.is_done ? 'white' : '#86868b',
+                                    backgroundColor: mt.is_done ? '#86868b' : 'transparent',
                                     display: 'flex',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                    fontSize: '11px',
+                                    fontSize: '10px',
+                                    fontWeight: '600',
                                     flexShrink: 0,
                                     cursor: 'pointer',
-                                    transition: 'background-color 0.2s, color 0.2s'
+                                    transition: 'background-color 0.2s, color 0.2s, border-color 0.2s'
                                   }}
                                 >
                                   {index + 1}.{mtIndex + 1}
                                 </span>
                                 <span style={{ 
                                   textDecoration: mt.is_done ? 'line-through' : 'none',
-                                  color: mt.is_done ? '#bbb' : '#555'
+                                  color: mt.is_done ? '#aeaeb2' : '#6e6e73',
+                                  transition: 'color 0.2s'
                                 }}>
                                   {mt.title}
                                 </span>
