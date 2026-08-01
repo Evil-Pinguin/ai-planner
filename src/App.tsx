@@ -7,6 +7,7 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [scaryTask, setScaryTask] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -26,7 +27,11 @@ function App() {
     fetchTasks()
   }, [])
 
-      const handleGenerate = async () => {
+  const toggleTask = (id: string) => {
+    setExpandedTaskId(prevId => prevId === id ? null : id)
+  }
+
+  const handleGenerate = async () => {
     if (!scaryTask) return
     setIsGenerating(true)
 
@@ -73,7 +78,7 @@ function App() {
     }
   }
 
-    return (
+  return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       <h1>AI Планировщик</h1>
       
@@ -85,7 +90,7 @@ function App() {
           placeholder="Например: Сделать портфолио"
           style={{ flexGrow: 1, padding: '8px' }}
         />
-          <button 
+        <button 
           onClick={handleGenerate}
           disabled={!scaryTask || isGenerating}
           style={{ padding: '8px 16px' }}
@@ -94,30 +99,51 @@ function App() {
         </button>
       </div>
 
-           {isLoading ? (
+      {isLoading ? (
         <p>Загрузка задач...</p>
       ) : (
         <div>
           {tasks.length === 0 && <p>Пока нет задач. Добавь первую!</p>}
-          {tasks.map((task) => (
-            <div key={task.id} style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px', borderRadius: '8px' }}>
-              <h3 style={{ marginTop: 0 }}>{task.title}</h3>
-              <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                {task.subtasks.map((subtask) => (
-                  <li key={subtask.id} style={{ marginBottom: '8px', listStyleType: 'none' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={subtask.is_done} 
-                        readOnly 
-                      />
-                      {subtask.title}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {tasks.map((task) => {
+            const isExpanded = expandedTaskId === task.id
+
+            return (
+              <div key={task.id} style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px', borderRadius: '8px' }}>
+                <div 
+                  onClick={() => toggleTask(task.id)}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                >
+                  <h3 style={{ margin: 0 }}>{task.title}</h3>
+                  <span style={{ fontSize: '12px', color: '#555' }}>{isExpanded ? '▲ Свернуть' : '▼ Развернуть'}</span>
+                </div>
+
+                {isExpanded && (
+                  <ul style={{ paddingLeft: '0', margin: '15px 0 0 0' }}>
+                    {task.subtasks.map((subtask, index) => (
+                      <li key={subtask.id} style={{ marginBottom: '12px', listStyleType: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          border: '1px solid #0070f3',
+                          color: '#0070f3',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          flexShrink: 0
+                        }}>
+                          {index + 1}
+                        </span>
+                        {subtask.title}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
