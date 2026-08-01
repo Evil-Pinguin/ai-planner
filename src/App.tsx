@@ -3,6 +3,15 @@ import { supabase } from './lib/supabaseClient'
 import { type Task, type Subtask, type Microtask } from './types'
 import confetti from 'canvas-confetti'
 
+// Функция для сохранения подзадач в базу
+const updateTaskInDB = async (taskId: string, newSubtasks: Subtask[]) => {
+  const { error } = await supabase
+    .from('tasks')
+    .update({ subtasks: newSubtasks })
+    .eq('id', taskId)
+    
+  if (error) console.error('Ошибка сохранения в БД', error)
+}
 function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -33,35 +42,32 @@ function App() {
     setExpandedTaskId(prevId => prevId === id ? null : id)
   }
 
-    const toggleSubtaskDone = (taskId: string, subtaskId: string) => {
-    let justCompleted = false // Флаг: задача только что стала 100%?
+      const toggleSubtaskDone = (taskId: string, subtaskId: string) => {
+    let justCompleted = false
+    let updatedSubtasks: Subtask[] = [] // Сюда сохраним новый массив для БД
 
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        // Считаем старый прогресс (было ли уже всё выполнено до клика)
         const wasAllDone = task.subtasks.length > 0 && task.subtasks.every(st => st.is_done)
 
-        const newSubtasks = task.subtasks.map(st => {
+        updatedSubtasks = task.subtasks.map(st => {
           if (st.id === subtaskId) {
             return { ...st, is_done: !st.is_done }
           }
           return st
         })
 
-        // Считаем новый прогресс (стало ли всё выполнено после клика)
-        const isAllDoneNow = newSubtasks.length > 0 && newSubtasks.every(st => st.is_done)
+        const isAllDoneNow = updatedSubtasks.length > 0 && updatedSubtasks.every(st => st.is_done)
 
-        // Момент перехода: раньше не было 100%, а теперь стало 100%
         if (!wasAllDone && isAllDoneNow) {
           justCompleted = true
         }
 
-        return { ...task, subtasks: newSubtasks }
+        return { ...task, subtasks: updatedSubtasks }
       }
       return task
     }))
 
-    // Если поймали момент завершения — стреляем!
     if (justCompleted) {
       confetti({
         particleCount: 120,
@@ -69,34 +75,44 @@ function App() {
         origin: { y: 0.6 }
       })
     }
+
+    // Сохраняем обновленный массив в Supabase
+    if (updatedSubtasks.length > 0) {
+      updateTaskInDB(taskId, updatedSubtasks)
+    }
   }
 
-  const toggleMicrotaskDone = (taskId: string, subtaskId: string, microtaskId: string) => {
+    const toggleMicrotaskDone = (taskId: string, subtaskId: string, microtaskId: string) => {
+    let updatedSubtasks: Subtask[] = []
+
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        return {
-          ...task,
-          subtasks: task.subtasks.map(st => {
-            if (st.id === subtaskId && st.microtasks) {
-              return {
-                ...st,
-                microtasks: st.microtasks.map(mt => {
-                  if (mt.id === microtaskId) {
-                    return { ...mt, is_done: !mt.is_done }
-                  }
-                  return mt
-                })
-              }
+        updatedSubtasks = task.subtasks.map(st => {
+          if (st.id === subtaskId && st.microtasks) {
+            return {
+              ...st,
+              microtasks: st.microtasks.map(mt => {
+                if (mt.id === microtaskId) {
+                  return { ...mt, is_done: !mt.is_done }
+                }
+                return mt
+              })
             }
-            return st
-          })
-        }
+          }
+          return st
+        })
+        return { ...task, subtasks: updatedSubtasks }
       }
       return task
     }))
+
+    // Сохраняем в базу
+    if (updatedSubtasks.length > 0) {
+      updateTaskInDB(taskId, updatedSubtasks)
+    }
   }
 
-  const handleGenerateMicrotasks = async (taskId: string, subtask: Subtask) => {
+    const handleGenerateMicrotasks = async (taskId: string, subtask: Subtask) => {
     setGeneratingSubtaskId(subtask.id)
 
     try {
@@ -116,20 +132,25 @@ function App() {
         is_done: false
       }))
 
+      let newSubtasksArray: Subtask[] = []
+
       setTasks(prevTasks => prevTasks.map(task => {
         if (task.id === taskId) {
-          return {
-            ...task,
-            subtasks: task.subtasks.map(st => {
-              if (st.id === subtask.id) {
-                return { ...st, microtasks: formattedMicrotasks }
-              }
-              return st
-            })
-          }
+          newSubtasksArray = task.subtasks.map(st => {
+            if (st.id === subtask.id) {
+              return { ...st, microtasks: formattedMicrotasks }
+            }
+            return st
+          })
+          return { ...task, subtasks: newSubtasksArray }
         }
         return task
       }))
+
+      // Сохраняем обновленный массив подзадач с новыми микрозадачами в БД
+      if (newSubtasksArray.length > 0) {
+        updateTaskInDB(taskId, newSubtasksArray)
+      }
 
     } catch (error) {
       console.error(error)
